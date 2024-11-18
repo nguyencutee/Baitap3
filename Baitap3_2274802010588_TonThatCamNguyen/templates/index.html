@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Sinh Viên</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f8;
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        .form-group input, .form-group select, .form-group button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .form-group button {
+            background-color: #4CAF50;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .form-group button:hover {
+            background-color: #45a049;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        pre {
+            background-color: #e8e8e8;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .pagination-buttons {
+            text-align: center;
+            margin-top: 10px;
+        }
+        .pagination-buttons button {
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Quản lý Sinh Viên</h1>
+        <div class="section">
+            <h2>Tải Dữ Liệu</h2>
+            <div class="form-group">
+                <label for="load_mssv">MSSV (Tùy chọn):</label>
+                <input type="text" id="load_mssv" placeholder="Nhập MSSV để tải thông tin sinh viên cụ thể">
+            </div>
+            <button onclick="loadData()">Tải Dữ Liệu</button>
+            <table id="data_table" style="width: 100%; margin-top: 20px; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Họ và Tên</th>
+                        <th>MSSV</th>
+                        <th>Tình trạng</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div class="pagination-buttons">
+                <button onclick="prevPage()" id="prevBtn">Previous</button>
+                <button onclick="nextPage()" id="nextBtn">Next</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Thêm Sinh Viên</h2>
+            <div class="form-group">
+                <label for="insert_hoten">Họ và Tên:</label>
+                <input type="text" id="insert_hoten" placeholder="Nhập họ và tên">
+            </div>
+            <div class="form-group">
+                <label for="insert_mssv">MSSV:</label>
+                <input type="text" id="insert_mssv" placeholder="Nhập MSSV">
+            </div>
+            <div class="form-group">
+                <label for="insert_tinhtrang">Tình Trạng:</label>
+                <select id="insert_tinhtrang">
+                    <option value="Còn học">Còn học</option>
+                    <option value="Nghỉ học">Nghỉ học</option>
+                    <option value="Bảo lưu">Bảo lưu</option>
+                </select>
+            </div>
+            <button onclick="insertData()">Thêm Sinh Viên</button>
+        </div>
+
+        <div class="section">
+            <h2>Xóa Dữ Liệu</h2>
+            <div class="form-group">
+                <label for="delete_mssv">MSSV (Tùy chọn):</label>
+                <input type="text" id="delete_mssv" placeholder="Nhập MSSV để xóa sinh viên">
+            </div>
+            <button onclick="deleteData()">Xóa</button>
+        </div>
+
+        <div class="section">
+            <h2>Cập nhật Dữ Liệu</h2>
+            <div class="form-group">
+                <label for="update_id">ID:</label>
+                <input type="text" id="update_id" placeholder="Nhập ID để cập nhật">
+            </div>
+            <div class="form-group">
+                <label for="update_mssv">MSSV:</label>
+                <input type="text" id="update_mssv" placeholder="Nhập MSSV mới">
+            </div>
+            <div class="form-group">
+                <label for="update_hoten">Họ và Tên:</label>
+                <input type="text" id="update_hoten" placeholder="Nhập họ và tên mới">
+            </div>
+            <div class="form-group">
+                <label for="update_tinhtrang">Tình Trạng:</label>
+                <select id="update_tinhtrang">
+                    <option value="Còn học">Còn học</option>
+                    <option value="Nghỉ học">Nghỉ học</option>
+                    <option value="Bảo lưu">Bảo lưu</option>
+                </select>
+            </div>
+            <button onclick="updateData()">Cập nhật</button>
+        </div>
+    </div>
+
+    <script>
+        const apiBaseUrl = 'http://127.0.0.1:5000';
+        let currentPage = 1; // Trang hiện tại
+        const itemsPerPage = 4; // Số mục hiển thị trên mỗi trang
+        let fullData = []; // Lưu trữ toàn bộ dữ liệu
+
+        async function connectDatabase() {
+            try {
+                const response = await fetch(`${apiBaseUrl}/connect`, { method: 'POST' });
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                alert(error);
+            }
+        }
+
+        async function loadData() {
+            const mssv = document.getElementById('load_mssv').value;
+            console.log('MSSV:', mssv);  // Kiểm tra giá trị MSSV nhập vào
+            const url = mssv ? `${apiBaseUrl}/load_data?mssv=${mssv}` : `${apiBaseUrl}/load_data`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (Array.isArray(data)) {
+                    fullData = data; // Lưu toàn bộ dữ liệu
+                } else if (data.MSSV) {
+                    fullData = [data]; // Nếu chỉ có một bản ghi, đóng gói thành mảng
+                } else {
+                    fullData = [];
+                }
+                currentPage = 1; // Đặt lại trang về 1
+                displayData(); // Hiển thị dữ liệu của trang đầu tiên
+            } catch (error) {
+                alert('Lỗi khi tải dữ liệu: ' + error.message);
+            }
+        }
+
+        function displayData() {
+            const tableBody = document.querySelector('#data_table tbody');
+            tableBody.innerHTML = ''; // Xóa các hàng hiện tại
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, fullData.length);
+            const pageData = fullData.slice(startIndex, endIndex);
+
+            if (pageData.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="5">Không có dữ liệu để hiển thị.</td>`;
+                tableBody.appendChild(row);
+                return;
+            }
+
+            pageData.forEach((record) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record["ID"]}</td>
+                    <td>${record["Họ và tên"]}</td>
+                    <td>${record.MSSV}</td>
+                    <td>${record["Tình trạng"]}</td>
+                    <td>${record.Email}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function nextPage() {
+            if (currentPage * itemsPerPage < fullData.length) {
+                currentPage++;
+                displayData();
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                displayData();
+            }
+        }
+
+        async function insertData() {
+            const hoten = document.getElementById('insert_hoten').value;
+            const mssv = document.getElementById('insert_mssv').value;
+            const tinhtrang = document.getElementById('insert_tinhtrang').value;
+            const response = await fetch(`${apiBaseUrl}/insert`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hoten, mssv, tinhtrang })
+            });
+            const result = await response.json();
+            alert(result.message);
+        }
+
+        async function deleteData() {
+            const mssv = document.getElementById('delete_mssv').value;
+            const response = await fetch(`${apiBaseUrl}/delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mssv })
+            });
+            const result = await response.json();
+            alert(result.message);
+        }
+
+        async function updateData() {
+            const id = document.getElementById('update_id').value;
+            const mssv = document.getElementById('update_mssv').value;
+            const hoten = document.getElementById('update_hoten').value;
+            const tinhtrang = document.getElementById('update_tinhtrang').value;
+            const response = await fetch(`${apiBaseUrl}/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({id, mssv, hoten, tinhtrang })
+            });
+            const result = await response.json();
+            alert(result.message);
+        }
+    </script>
+</body>
+</html>
